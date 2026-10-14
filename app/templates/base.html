@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AttendX - Attendance Management{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans antialiased">
+    <!-- Navigation Header -->
+    <nav class="bg-indigo-900 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-lg bg-indigo-500 flex items-center justify-center font-bold text-lg text-white shadow">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </div>
+                    <a href="{{ url_for('main.dashboard') }}" class="text-xl font-bold tracking-tight text-white hover:text-indigo-200 transition">
+                        Attend<span class="text-indigo-400">X</span>
+                    </a>
+                </div>
+                <div class="hidden md:flex items-center space-x-1">
+                    <a href="{{ url_for('main.dashboard') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-800 transition flex items-center space-x-2"><i class="fa-solid fa-gauge"></i><span>Dashboard</span></a>
+                    <a href="{{ url_for('main.attendance') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-800 transition flex items-center space-x-2"><i class="fa-solid fa-list-check"></i><span>Mark Sheet</span></a>
+                    <a href="{{ url_for('main.members') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-800 transition flex items-center space-x-2"><i class="fa-solid fa-users"></i><span>Roster</span></a>
+                    <a href="{{ url_for('main.reports') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-800 transition flex items-center space-x-2"><i class="fa-solid fa-chart-line"></i><span>Analytics</span></a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Alerts -->
+    <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="space-y-2">
+                {% for category, message in messages %}
+                    {% set bg = 'bg-emerald-50 border-emerald-400 text-emerald-800' if category == 'success' else ('bg-amber-50 border-amber-400 text-amber-800' if category == 'warning' else ('bg-blue-50 border-blue-400 text-blue-800' if category == 'info' else 'bg-rose-50 border-rose-400 text-rose-800')) %}
+                    <div class="border-l-4 p-4 rounded-r-md shadow-sm flex items-center justify-between {{ bg }}">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-info-circle"></i>
+                            <span class="text-sm font-medium">{{ message }}</span>
+                        </div>
+                        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600">&times;</button>
+                    </div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Body -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-4 text-center text-xs text-slate-500">
+        AttendX Attendance System &bull; Clean, Precise &amp; Fast Tracking
+    </footer>
+</body>
+</html>

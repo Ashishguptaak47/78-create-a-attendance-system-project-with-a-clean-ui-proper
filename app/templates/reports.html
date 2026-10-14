@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Reports &amp; Analytics - AttendX{% endblock %}
+{% block content %}
+<div class="space-y-6">
+    <!-- Filter Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Attendance Reports</h1>
+            <p class="text-sm text-slate-500">Inspect historical trends, aggregated rates, and export data.</p>
+        </div>
+
+        <form method="GET" action="{{ url_for('main.reports') }}" class="flex flex-wrap items-center gap-3">
+            <div>
+                <input type="date" name="from_date" value="{{ from_date }}"
+                    class="px-3 py-1.5 text-sm border border-slate-300 rounded-md">
+            </div>
+            <span class="text-slate-400 text-xs font-bold">TO</span>
+            <div>
+                <input type="date" name="to_date" value="{{ to_date }}"
+                    class="px-3 py-1.5 text-sm border border-slate-300 rounded-md">
+            </div>
+            <div>
+                <select name="department" class="px-3 py-1.5 text-sm border border-slate-300 rounded-md">
+                    <option value="All" {% if selected_dept == 'All' %}selected{% endif %}>All Depts</option>
+                    {% for d in departments %}
+                    <option value="{{ d }}" {% if selected_dept == d %}selected{% endif %}>{{ d }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md shadow-sm">
+                Filter
+            </button>
+            <a href="{{ url_for('main.export_csv', from_date=from_date, to_date=to_date, department=selected_dept) }}"
+                class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-md shadow-sm flex items-center space-x-1">
+                <i class="fa-solid fa-file-csv"></i>
+                <span>Export CSV</span>
+            </a>
+        </form>
+    </div>
+
+    <!-- Summary Aggregate Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-4 border-b border-slate-200 font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-indigo-600"></i> Individual Summary ({{ from_date }} to {{ to_date }})
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold border-b border-slate-200">
+                        <th class="py-3 px-4">Member</th>
+                        <th class="py-3 px-4">Department</th>
+                        <th class="py-3 px-4 text-center">Present</th>
+                        <th class="py-3 px-4 text-center">Late</th>
+                        <th class="py-3 px-4 text-center">Absent</th>
+                        <th class="py-3 px-4 text-right">Attended Days</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for s in member_stats %}
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-3 px-4 font-medium text-slate-800">
+                            {{ s.name }} <span class="text-xs font-mono text-slate-400">({{ s.code }})</span>
+                        </td>
+                        <td class="py-3 px-4 text-slate-600 text-xs font-semibold">{{ s.department }}</td>
+                        <td class="py-3 px-4 text-center text-emerald-700 font-semibold">{{ s.present_count }}</td>
+                        <td class="py-3 px-4 text-center text-amber-700 font-semibold">{{ s.late_count }}</td>
+                        <td class="py-3 px-4 text-center text-rose-700 font-semibold">{{ s.absent_count }}</td>
+                        <td class="py-3 px-4 text-right font-bold text-indigo-600">{{ s.present_count + s.late_count }} / {{ s.total_days }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Detailed Log List -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-4 border-b border-slate-200 font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-list text-indigo-600"></i> Detailed Log Entries ({{ logs|length }} Total)
+        </div>
+        <div class="overflow-x-auto max-h-96">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead class="sticky top-0 bg-slate-50 border-b border-slate-200 text-xs uppercase font-semibold text-slate-600">
+                    <tr>
+                        <th class="py-3 px-4">Date</th>
+                        <th class="py-3 px-4">Badge</th>
+                        <th class="py-3 px-4">Name</th>
+                        <th class="py-3 px-4">Department</th>
+                        <th class="py-3 px-4">Status</th>
+                        <th class="py-3 px-4">Check In</th>
+                        <th class="py-3 px-4">Check Out</th>
+                        <th class="py-3 px-4">Notes</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for l in logs %}
+                    <tr class="hover:bg-slate-50 text-xs">
+                        <td class="py-2.5 px-4 font-mono text-slate-600">{{ l.date }}</td>
+                        <td class="py-2.5 px-4 font-mono font-bold text-indigo-600">{{ l.code }}</td>
+                        <td class="py-2.5 px-4 font-medium text-slate-800">{{ l.name }}</td>
+                        <td class="py-2.5 px-4 text-slate-500">{{ l.department }}</td>
+                        <td class="py-2.5 px-4">
+                            {% if l.status == 'Present' %}
+                                <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800">Present</span>
+                            {% elif l.status == 'Late' %}
+                                <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-800">Late</span>
+                            {% elif l.status == 'Absent' %}
+                                <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-100 text-rose-800">Absent</span>
+                            {% else %}
+                                <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-800">{{ l.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-2.5 px-4 font-mono text-slate-600">{{ l.check_in or '-' }}</td>
+                        <td class="py-2.5 px-4 font-mono text-slate-600">{{ l.check_out or '-' }}</td>
+                        <td class="py-2.5 px-4 text-slate-500 italic">{{ l.note or '' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-6 text-slate-400">No records found for the selected period.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

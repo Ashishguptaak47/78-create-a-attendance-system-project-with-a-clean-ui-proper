@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - AttendX{% endblock %}
+{% block content %}
+<div class="space-y-6">
+    <!-- Top Header & Fast Punch -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Attendance Dashboard</h1>
+            <p class="text-sm text-slate-500 mt-1"><i class="fa-regular fa-calendar"></i> Today: <span class="font-semibold text-slate-700">{{ today }}</span></p>
+        </div>
+        
+        <!-- Quick Punch Box -->
+        <form action="{{ url_for('main.quick_punch') }}" method="POST" class="flex flex-wrap items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="relative">
+                <i class="fa-solid fa-id-badge absolute left-3 top-3 text-slate-400"></i>
+                <input type="text" name="badge_code" placeholder="Badge Code (e.g. EMP001)" required autofocus
+                    class="pl-9 pr-3 py-2 text-sm bg-white border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 uppercase tracking-wider w-56">
+            </div>
+            <button type="submit" name="action" value="in" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-md shadow-sm transition flex items-center space-x-1">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                <span>Punch In</span>
+            </button>
+            <button type="submit" name="action" value="out" class="px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white text-sm font-medium rounded-md shadow-sm transition flex items-center space-x-1">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                <span>Punch Out</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Metric Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Members</p>
+            <p class="text-3xl font-bold text-slate-800 mt-1">{{ total_members }}</p>
+            <span class="text-xs text-indigo-600 font-medium mt-2 block">Active in roster</span>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wider text-emerald-600">Present</p>
+            <p class="text-3xl font-bold text-emerald-700 mt-1">{{ status_counts.Present }}</p>
+            <span class="text-xs text-slate-400 mt-2 block">On time today</span>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wider text-amber-600">Late</p>
+            <p class="text-3xl font-bold text-amber-700 mt-1">{{ status_counts.Late }}</p>
+            <span class="text-xs text-slate-400 mt-2 block">After 09:15 AM</span>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wider text-rose-600">Absent</p>
+            <p class="text-3xl font-bold text-rose-700 mt-1">{{ status_counts.Absent }}</p>
+            <span class="text-xs text-slate-400 mt-2 block">Confirmed absent</span>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">Attendance Rate</p>
+            <p class="text-3xl font-bold text-indigo-700 mt-1">{{ attendance_rate }}%</p>
+            <div class="w-full bg-slate-100 rounded-full h-1.5 mt-3 overflow-hidden">
+                <div class="bg-indigo-600 h-1.5 rounded-full" style="width: {{ attendance_rate }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Grid Content: Quick Table & Fast Attendance -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Recent Activity Feed -->
+        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i>
+                    Recent Attendance Entries
+                </h2>
+                <a href="{{ url_for('main.attendance') }}" class="text-sm text-indigo-600 font-semibold hover:underline">Open Mark Sheet &rarr;</a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
+                            <th class="py-3 px-4">Date</th>
+                            <th class="py-3 px-4">Member</th>
+                            <th class="py-3 px-4">Check In</th>
+                            <th class="py-3 px-4">Check Out</th>
+                            <th class="py-3 px-4">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for log in recent_logs %}
+                        <tr class="hover:bg-slate-50">
+                            <td class="py-3 px-4 text-slate-500 font-mono text-xs">{{ log.date }}</td>
+                            <td class="py-3 px-4">
+                                <div class="font-medium text-slate-800">{{ log.name }}</div>
+                                <div class="text-xs text-slate-400 font-mono">{{ log.code }} &bull; {{ log.department }}</div>
+                            </td>
+                            <td class="py-3 px-4 font-mono text-xs text-slate-600">{{ log.check_in or '—' }}</td>
+                            <td class="py-3 px-4 font-mono text-xs text-slate-600">{{ log.check_out or '—' }}</td>
+                            <td class="py-3 px-4">
+                                {% if log.status == 'Present' %}
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Present</span>
+                                {% elif log.status == 'Late' %}
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Late</span>
+                                {% elif log.status == 'Absent' %}
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800">Absent</span>
+                                {% else %}
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-800">{{ log.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-8 text-slate-400">No attendance logged yet. Use the punch box above!</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Quick Badge Lookup / Actions -->
+        <div class="space-y-6">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-id-card text-indigo-500"></i> Badge Code Directory
+                </h3>
+                <p class="text-xs text-slate-500 mb-3">Quick reference for testing badge punch-ins:</p>
+                <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    {% for m in members %}
+                    <div class="p-2.5 rounded-lg border border-slate-100 hover:border-indigo-200 bg-slate-50 flex items-center justify-between">
+                        <div>
+                            <div class="text-xs font-bold text-slate-800">{{ m.name }}</div>
+                            <div class="text-[11px] font-mono text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded inline-block mt-0.5">{{ m.code }}</div>
+                        </div>
+                        <button type="button" onclick="document.querySelector('[name=badge_code]').value='{{ m.code }}'"
+                            class="text-xs text-indigo-600 hover:text-indigo-800 font-medium py-1 px-2 border border-indigo-200 rounded hover:bg-white">
+                            Select
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
